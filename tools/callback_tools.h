@@ -16,7 +16,7 @@ class Callback;
  * operator().
  *
  * @details This class allows users to store a callback (i.e. any callable matching the specified function signature)
- * and safely call it from multiple threads. The callback can be reassigned at runtime with SetCallback()
+ * and safely call it from multiple threads. The callback can be reassigned at runtime with RegisterCallback()
  *
  * @forwarding
  * Internally, operator() uses `std::forward<Parameters>(params)...` but **this is not “perfect forwarding.”**
@@ -35,7 +35,7 @@ class Callback;
  * @code
  *  // Create a callback that returns bool and takes an int as a parameter
  *  Callback<bool(int)> callback;
- *  callback. SetCallback([](double d)->bool{ return d > 69;});
+ *  callback. RegisterCallback([](double d)->bool{ return d > 69;});
  *
  *  bool result = callback(420); // result is true;
  *
@@ -45,6 +45,11 @@ class Callback;
 template<class Return, class... Parameters>
 class Callback<Return(Parameters...)>{
  public:
+  /**
+   * @brief FunctionType represents the function signature
+   */
+  using FunctionType = std::function<Return(Parameters...)>;
+
   /**
    * @brief Default Constructable
    */
@@ -64,15 +69,10 @@ class Callback<Return(Parameters...)>{
   ~Callback() noexcept = default;
 
   /**
-   * @brief FunctionType represents the function signature
-   */
-  using FunctionType = std::function<Return(Parameters...)>;
-
-  /**
    * @brief Assign a method to the callback with this method
    * @param callback Function You would like to store as the callback
    */
-  void SetCallback(FunctionType callback){
+  void RegisterCallback(FunctionType callback){
     std::lock_guard lock(mtx_);
     callback_ = std::move(callback);
   }
@@ -125,11 +125,7 @@ class Callback<Return(Parameters...)>{
 
  private:
   mutable std::mutex mtx_;
-  FunctionType callback_;
+  FunctionType callback_ = nullptr;
 };
-
-
-
-
 
 #endif //CALLBACKS_TOOLS_CALLBACK_TOOLS_H_
