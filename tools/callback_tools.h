@@ -128,4 +128,31 @@ class Callback<Return(Parameters...)>{
   FunctionType callback_ = nullptr;
 };
 
+template< class Derived, class Signature>
+class RTStaticCallback;
+template<class Derived, class Ret, class... Args>
+class RTStaticCallback <Derived, Ret(Args...)>{
+ public:
+  using CallbackType = std::function<Ret(Args...)>;
+  void RegisterCallback(CallbackType cb){
+    callback_ = std::move(cb);
+  }
+
+  Ret Call(Args... args){
+    if( callback_ ){
+      return callback_(std::forward<Args>(args)...);
+    }
+    else{
+      return static_cast< Derived*>(this)->DefaultCallback(std::forward<Args>(args)...);
+    }
+  }
+ protected:
+  CallbackType callback_ = nullptr;
+};
+class OnEvent : public RTStaticCallback< OnEvent, void(int)>{
+ public:
+  void DefaultCallback(int i){
+    std::cout << "Default Callback, i = " << i << std::endl;
+  }
+};
 #endif //CALLBACKS_TOOLS_CALLBACK_TOOLS_H_

@@ -210,6 +210,14 @@ int main() {
   signal(SIGINT, SignalHandler);
   signal(SIGTERM, SignalHandler);
 
+  OnEvent on_event;
+  on_event.Call(69);
+  on_event.RegisterCallback([](int i)->void {
+    std::cout << "Custom Callback, i = " << i << std::endl;
+  });
+  on_event.Call(420);
+
+/*
   TigerKingZooManager joe_exotic;
   PhoenixZooManager bert_castro;
   HogleZooManager doug_lund;
@@ -229,6 +237,7 @@ int main() {
   joe_exotic.CloseZoo();
   bert_castro.CloseZoo();
   doug_lund.CloseZoo();
+*/
 
   return 0;
 }
