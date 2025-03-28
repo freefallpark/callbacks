@@ -16,7 +16,7 @@ class Callback;
  * operator().
  *
  * @details This class allows users to store a callback (i.e. any callable matching the specified function signature)
- * and safely call it from multiple threads. The callback can be reassigned at runtime with RegisterCallback()
+ * and safely call it from multiple threads. The callback can be reassigned at runtime with Register()
  *
  * @forwarding
  * Internally, operator() uses `std::forward<Parameters>(params)...` but **this is not “perfect forwarding.”**
@@ -35,7 +35,7 @@ class Callback;
  * @code
  *  // Create a callback that returns bool and takes an int as a parameter
  *  Callback<bool(int)> callback;
- *  callback. RegisterCallback([](double d)->bool{ return d > 69;});
+ *  callback.Register([](double d)->bool{ return d > 69;});
  *
  *  bool result = callback(420); // result is true;
  *
@@ -127,50 +127,5 @@ class Callback<Return(Parameters...)>{
   mutable std::mutex mtx_;
   FunctionType callback_ = nullptr;
 };
-
-template< class Derived, class Signature>
-class RTStaticCallback;
-
-template<class Derived, class Ret, class... Args>
-class RTStaticCallback <Derived, Ret(Args...)>{
- public:
-  using CallbackType = std::function<Ret(Args...)>;
-  void RegisterCallback(CallbackType cb){
-    callback_ = std::move(cb);
-  }
-  Ret Call(Args... args){
-    // Use a compile-time check to determine if Return is void
-    if constexpr (std::is_void_v<Ret>){
-      if(!callback_) return; // Exit early if callback is not valid
-      callback_(std::forward<Args>(args)...);
-      return;
-    }
-      // Callback is non-void, we must return something...
-    else{
-      // Do a compile time check to ensure 'Return' object is default-constructable
-      static_assert(std::is_default_constructible_v<Ret>);
-      if(!callback_){
-        // Return a default constructed Return object if the callback is not valid. This Requires
-        // Return to be default-constructable.
-        return Ret{};
-      }
-      // Call the valid stored method and return its result;
-      return callback_(std::forward<Args>(args)...);
-    }
-
-  }
- protected:
-  CallbackType callback_ = nullptr;
-
- private:
-  // Creating a private ctor and friending the derived FORCES you to match yourself when creating a derived crtp class:
-  // THIS WORKS:
-  // class Derived1 : public RTStaticCallback<Derived1, void()>{}
-  // THIS DOES NOT:
-  // class Derived2: public RTStaticCallback<Derived2, void()>{}
-  RTStaticCallback() = default;
-  friend Derived;
-};
-class OnClientLost : public RTStaticCallback<OnClientLost, void()>{};
 
 #endif //CALLBACKS_TOOLS_CALLBACK_TOOLS_H_

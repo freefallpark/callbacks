@@ -209,11 +209,7 @@ void SignalHandler(int signal){
 int main() {
   signal(SIGINT, SignalHandler);
   signal(SIGTERM, SignalHandler);
-  OnClientLost on_client_lost_;
-  on_client_lost_.RegisterCallback([]()->void{std::cout << "handling lost client\n";});
-  on_client_lost_.Call();
 
-/*
   TigerKingZooManager joe_exotic;
   PhoenixZooManager bert_castro;
   HogleZooManager doug_lund;
@@ -233,7 +229,6 @@ int main() {
   joe_exotic.CloseZoo();
   bert_castro.CloseZoo();
   doug_lund.CloseZoo();
-*/
 
   return 0;
 }
