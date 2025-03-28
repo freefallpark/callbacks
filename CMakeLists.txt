@@ -7,3 +7,4 @@ add_subdirectory(tools)
 
 add_executable(callbacks main.cpp)
 target_link_libraries(callbacks CallbackTools)
+target_compile_options(callbacks PUBLIC -O3)

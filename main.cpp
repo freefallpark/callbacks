@@ -16,7 +16,7 @@ class ZookeeperTasks{
  public:
   virtual void FeedTheAnimals() = 0; // mandatory callback
 };
- class ZooKeeperA :public ZooKeeperBase{
+class ZooKeeperA :public ZooKeeperBase{
  public:
   explicit ZooKeeperA(ZookeeperTasks &task_definitions) : task_definitions_(task_definitions){}
   void FeedTheAnimals()override{
@@ -197,19 +197,7 @@ class HogleZooManager final : public ZooManagerBase{
 
   std::mutex mtx_;
 };
-
-//region Signal Handling
-sig_atomic_t stop = 0;
-void SignalHandler(int signal){
-  stop = signal;
-}
-//endregion
-
-}  // namespace
-int main() {
-  signal(SIGINT, SignalHandler);
-  signal(SIGTERM, SignalHandler);
-
+int ZooExample(sig_atomic_t & external_stop){
   TigerKingZooManager joe_exotic;
   PhoenixZooManager bert_castro;
   HogleZooManager doug_lund;
@@ -221,7 +209,7 @@ int main() {
 
   // Run
   while(true){
-    if(stop != 0) break;
+    if(external_stop != 0) break;
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
 
@@ -231,4 +219,137 @@ int main() {
   doug_lund.CloseZoo();
 
   return 0;
+}
+
+//region Signal Handling
+sig_atomic_t stop = 0;
+void SignalHandler(int signal){
+  stop = signal;
+}
+//endregion
+
+class CallbackBenchmarkClass{
+ public:
+  virtual ~CallbackBenchmarkClass() = default;
+  virtual void CallAll() = 0;
+  int GetI(){return i;}
+ protected:
+  int i = 0;
+};
+class TestCallbacks{
+ protected:
+  virtual void on_event_1() {};
+  virtual void on_event_2() {};
+  virtual void on_event_3() {};
+  virtual void on_event_4() {};
+  virtual void on_event_5() {};
+  virtual void on_event_6() {};
+  virtual void on_event_7() {};
+  virtual void on_event_8() {};
+  virtual void on_event_9() {};
+  virtual void on_event_10() {};
+};
+class TestInheritedCallbacks : public TestCallbacks, public CallbackBenchmarkClass{
+ public:
+  void CallAll() override{
+    on_event_1();
+    on_event_2();
+    on_event_3();
+    on_event_4();
+    on_event_5();
+    on_event_6();
+    on_event_7();
+    on_event_8();
+    on_event_9();
+    on_event_10();
+  }
+ private:
+  void on_event_1() override{i = i + 1; }
+  void on_event_2() override{i = i - 1; }
+  void on_event_3() override{i = i + 2; }
+  void on_event_4() override{i = i - 2; }
+  void on_event_5() override{i = i + 3; }
+  void on_event_6() override{i = i - 3; }
+  void on_event_7() override{i = i + 4; }
+  void on_event_8() override{i = i - 4; }
+  void on_event_9() override{i = i + 5; }
+  void on_event_10() override{ i = i -5;}
+};
+class TestTemplatedCallbacks : public CallbackBenchmarkClass{
+ public:
+  TestTemplatedCallbacks(){
+    on_event_1.RegisterCallback([this](){this->event_handler_1();});
+    on_event_2.RegisterCallback([this](){this->event_handler_2();});
+    on_event_3.RegisterCallback([this](){this->event_handler_3();});
+    on_event_4.RegisterCallback([this](){this->event_handler_4();});
+    on_event_5.RegisterCallback([this](){this->event_handler_5();});
+    on_event_6.RegisterCallback([this](){this->event_handler_6();});
+    on_event_7.RegisterCallback([this](){this->event_handler_7();});
+    on_event_8.RegisterCallback([this](){this->event_handler_8();});
+    on_event_9.RegisterCallback([this](){this->event_handler_9();});
+    on_event_10.RegisterCallback([this](){this->event_handler_10();});
+  }
+  void CallAll() override{
+    on_event_1();
+    on_event_2();
+    on_event_3();
+    on_event_4();
+    on_event_5();
+    on_event_6();
+    on_event_7();
+    on_event_8();
+    on_event_9();
+    on_event_10();
+  }
+
+ private:
+  void event_handler_1(){i = i + 1; }
+  void event_handler_2(){i = i - 1; }
+  void event_handler_3(){i = i + 2; }
+  void event_handler_4(){i = i - 2; }
+  void event_handler_5(){i = i + 3; }
+  void event_handler_6(){i = i - 3; }
+  void event_handler_7(){i = i + 4; }
+  void event_handler_8(){i = i - 4; }
+  void event_handler_9(){i = i + 5; }
+  void event_handler_10(){i = i - 5; }
+
+  Callback<void()> on_event_1;
+  Callback<void()> on_event_2;
+  Callback<void()> on_event_3;
+  Callback<void()> on_event_4;
+  Callback<void()> on_event_5;
+  Callback<void()> on_event_6;
+  Callback<void()> on_event_7;
+  Callback<void()> on_event_8;
+  Callback<void()> on_event_9;
+  Callback<void()> on_event_10;
+};
+void BenchMark(CallbackBenchmarkClass & benchmark, const std::string & test_name){
+  auto end = std::chrono::steady_clock::now();
+  auto start = std::chrono::steady_clock::now();
+  for(int i = 0; i<10000; i++){
+    benchmark.CallAll();
+  }
+  end = std::chrono::steady_clock::now();
+  std::cout << test_name << " Duration: "
+      << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
+      <<" " "microseconds"<< std::endl;
+}
+int BenchMarkCallbackTypes(){
+  std::unique_ptr<CallbackBenchmarkClass> ic = std::make_unique<TestInheritedCallbacks>();
+  ic->CallAll();
+  BenchMark(*ic, "inherited");
+  std::cout << "ic.i: " << ic->GetI() << std::endl;
+  std::unique_ptr<CallbackBenchmarkClass> tc = std::make_unique<TestTemplatedCallbacks>();
+  BenchMark(*tc, "templated");
+  tc->CallAll();
+  std::cout << "tc.i: " << tc->GetI() << std::endl;
+  return 0;
+}
+}  // namespace
+int main() {
+  signal(SIGINT, SignalHandler);
+  signal(SIGTERM, SignalHandler);
+  return BenchMarkCallbackTypes();
 }
