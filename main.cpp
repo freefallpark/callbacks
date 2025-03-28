@@ -325,31 +325,154 @@ class TestTemplatedCallbacks : public CallbackBenchmarkClass{
   Callback<void()> on_event_9;
   Callback<void()> on_event_10;
 };
+
+//Subclass Inheritance solution idea:
+class Object1EventCallbacks{
+ public:
+  virtual void on_event_1() = 0;
+  virtual void on_event_2() = 0;
+  virtual void on_event_3() = 0;
+  virtual void on_event_4() = 0;
+  virtual void on_event_5() = 0;
+  virtual void on_event_6() = 0;
+  virtual void on_event_7() = 0;
+  virtual void on_event_8() = 0;
+  virtual void on_event_9() = 0;
+  virtual void on_event_10() = 0;
+};
+class Object1{
+ public:
+  explicit Object1(Object1EventCallbacks &callbacks) : callbacks_(callbacks){}
+  void Trigger(){
+    callbacks_.on_event_1();
+    callbacks_.on_event_2();
+    callbacks_.on_event_3();
+    callbacks_.on_event_4();
+    callbacks_.on_event_5();
+    callbacks_.on_event_6();
+    callbacks_.on_event_7();
+    callbacks_.on_event_8();
+    callbacks_.on_event_9();
+    callbacks_.on_event_10();
+  }
+ private:
+  Object1EventCallbacks &callbacks_;
+};
+
+class Object2EventCallbacks{
+ public:
+  virtual void on_event_1() = 0;
+};
+class Object2{
+ public:
+  explicit Object2(Object2EventCallbacks &callbacks) : callbacks_(callbacks){}
+  void Trigger(){
+    callbacks_.on_event_1();
+  }
+ private:
+  Object2EventCallbacks &callbacks_;
+};
+
+class SubClassInheritedCallbacks : public CallbackBenchmarkClass{
+ public:
+  SubClassInheritedCallbacks()
+      : object_1_event_handler_(*this),
+        object_1_(object_1_event_handler_),
+        i_(0){ };
+  void Trigger(){
+    object_1_.Trigger();
+  }
+
+ private:
+  //Define object 1 and object 2 event callbacks here
+  class Object1EventHandler final : public Object1EventCallbacks{
+   public:
+    explicit Object1EventHandler(SubClassInheritedCallbacks &process_class) : process_class_(process_class){}
+    void on_event_1() override {process_class_.OnObject1Event1();};
+    void on_event_2() override {process_class_.OnObject1Event2();};
+    void on_event_3() override {process_class_.OnObject1Event3();};
+    void on_event_4() override {process_class_.OnObject1Event4();};
+    void on_event_5() override {process_class_.OnObject1Event5();};
+    void on_event_6() override {process_class_.OnObject1Event6();};
+    void on_event_7() override {process_class_.OnObject1Event7();};
+    void on_event_8() override {process_class_.OnObject1Event8();};
+    void on_event_9() override {process_class_.OnObject1Event9();};
+    void on_event_10() override {process_class_.OnObject1Event10();};
+
+
+   private:
+    SubClassInheritedCallbacks &process_class_;
+  };
+
+  // Define Event Handling:
+  void OnObject1Event1(){i_ = i_ + 1; }
+  void OnObject1Event2(){i_ = i_ - 1; }
+  void OnObject1Event3(){i_ = i_ + 2; }
+  void OnObject1Event4(){i_ = i_ - 2; }
+  void OnObject1Event5(){i_ = i_ + 3; }
+  void OnObject1Event6(){i_ = i_ - 3; }
+  void OnObject1Event7(){i_ = i_ + 4; }
+  void OnObject1Event8(){i_ = i_ - 4; }
+  void OnObject1Event9(){i_ = i_ + 5; }
+  void OnObject1Event10(){i_ = i_ - 5; }
+
+  void CallAll() override {
+    object_1_.Trigger();
+  }
+
+  Object1EventHandler object_1_event_handler_;
+  Object1 object_1_;
+  int i_;
+};
+
 void BenchMark(CallbackBenchmarkClass & benchmark, const std::string & test_name){
+  int num_tests = 100000;
   auto end = std::chrono::steady_clock::now();
   auto start = std::chrono::steady_clock::now();
-  for(int i = 0; i<10000; i++){
+  for(int i = 0; i<num_tests; i++){
     benchmark.CallAll();
   }
   end = std::chrono::steady_clock::now();
-  std::cout << test_name << " Duration: "
-      << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count()
-      <<" " "microseconds"<< std::endl;
+  auto total_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+  std::cout << test_name << " Total Duration: " << total_duration << "\tmicroseconds ";
 }
 int BenchMarkCallbackTypes(){
   std::unique_ptr<CallbackBenchmarkClass> ic = std::make_unique<TestInheritedCallbacks>();
   ic->CallAll();
-  BenchMark(*ic, "inherited");
-  std::cout << "ic.i: " << ic->GetI() << std::endl;
+  BenchMark(*ic, "ic  ");
+  std::cout << ic->GetI() << std::endl;
+
+  std::unique_ptr<CallbackBenchmarkClass> scic = std::make_unique<SubClassInheritedCallbacks>();
+  scic->CallAll();
+  BenchMark(*scic, "scic");
+  std::cout << scic->GetI() << std::endl;
+
   std::unique_ptr<CallbackBenchmarkClass> tc = std::make_unique<TestTemplatedCallbacks>();
-  BenchMark(*tc, "templated");
+  BenchMark(*tc, "tc  ");
   tc->CallAll();
-  std::cout << "tc.i: " << tc->GetI() << std::endl;
+  std::cout << tc->GetI() << std::endl;
   return 0;
 }
+
+int MultiInheritSolutionTest(){
+  SubClassInheritedCallbacks process;
+  process.Trigger();
+  return 0;
+}
+
 }  // namespace
 int main() {
   signal(SIGINT, SignalHandler);
   signal(SIGTERM, SignalHandler);
-  return BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  BenchMarkCallbackTypes();
+  return 0;
 }
