@@ -209,13 +209,9 @@ void SignalHandler(int signal){
 int main() {
   signal(SIGINT, SignalHandler);
   signal(SIGTERM, SignalHandler);
-
-  OnEvent on_event;
-  on_event.Call(69);
-  on_event.RegisterCallback([](int i)->void {
-    std::cout << "Custom Callback, i = " << i << std::endl;
-  });
-  on_event.Call(420);
+  OnClientLost on_client_lost_;
+  on_client_lost_.RegisterCallback([]()->void{std::cout << "handling lost client\n";});
+  on_client_lost_.Call();
 
 /*
   TigerKingZooManager joe_exotic;

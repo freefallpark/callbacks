@@ -130,6 +130,7 @@ class Callback<Return(Parameters...)>{
 
 template< class Derived, class Signature>
 class RTStaticCallback;
+
 template<class Derived, class Ret, class... Args>
 class RTStaticCallback <Derived, Ret(Args...)>{
  public:
@@ -137,22 +138,39 @@ class RTStaticCallback <Derived, Ret(Args...)>{
   void RegisterCallback(CallbackType cb){
     callback_ = std::move(cb);
   }
-
   Ret Call(Args... args){
-    if( callback_ ){
+    // Use a compile-time check to determine if Return is void
+    if constexpr (std::is_void_v<Ret>){
+      if(!callback_) return; // Exit early if callback is not valid
+      callback_(std::forward<Args>(args)...);
+      return;
+    }
+      // Callback is non-void, we must return something...
+    else{
+      // Do a compile time check to ensure 'Return' object is default-constructable
+      static_assert(std::is_default_constructible_v<Ret>);
+      if(!callback_){
+        // Return a default constructed Return object if the callback is not valid. This Requires
+        // Return to be default-constructable.
+        return Ret{};
+      }
+      // Call the valid stored method and return its result;
       return callback_(std::forward<Args>(args)...);
     }
-    else{
-      return static_cast< Derived*>(this)->DefaultCallback(std::forward<Args>(args)...);
-    }
+
   }
  protected:
   CallbackType callback_ = nullptr;
+
+ private:
+  // Creating a private ctor and friending the derived FORCES you to match yourself when creating a derived crtp class:
+  // THIS WORKS:
+  // class Derived1 : public RTStaticCallback<Derived1, void()>{}
+  // THIS DOES NOT:
+  // class Derived2: public RTStaticCallback<Derived2, void()>{}
+  RTStaticCallback() = default;
+  friend Derived;
 };
-class OnEvent : public RTStaticCallback< OnEvent, void(int)>{
- public:
-  void DefaultCallback(int i){
-    std::cout << "Default Callback, i = " << i << std::endl;
-  }
-};
+class OnClientLost : public RTStaticCallback<OnClientLost, void()>{};
+
 #endif //CALLBACKS_TOOLS_CALLBACK_TOOLS_H_
