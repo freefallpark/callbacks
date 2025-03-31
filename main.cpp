@@ -388,16 +388,16 @@ class SubClassInheritedCallbacks : public CallbackBenchmarkClass{
   class Object1EventHandler final : public Object1EventCallbacks{
    public:
     explicit Object1EventHandler(SubClassInheritedCallbacks &process_class) : process_class_(process_class){}
-    void on_event_1() override {process_class_.OnObject1Event1();};
-    void on_event_2() override {process_class_.OnObject1Event2();};
-    void on_event_3() override {process_class_.OnObject1Event3();};
-    void on_event_4() override {process_class_.OnObject1Event4();};
-    void on_event_5() override {process_class_.OnObject1Event5();};
-    void on_event_6() override {process_class_.OnObject1Event6();};
-    void on_event_7() override {process_class_.OnObject1Event7();};
-    void on_event_8() override {process_class_.OnObject1Event8();};
-    void on_event_9() override {process_class_.OnObject1Event9();};
-    void on_event_10() override {process_class_.OnObject1Event10();};
+    void on_event_1() override {process_class_.i_ = process_class_.i_ + 1; };
+    void on_event_2() override {process_class_.i_ = process_class_.i_ - 1; };
+    void on_event_3() override {process_class_.i_ = process_class_.i_ + 2; };
+    void on_event_4() override {process_class_.i_ = process_class_.i_ - 2; };
+    void on_event_5() override {process_class_.i_ = process_class_.i_ + 3; };
+    void on_event_6() override {process_class_.i_ = process_class_.i_ - 3; };
+    void on_event_7() override {process_class_.i_ = process_class_.i_ + 4; };
+    void on_event_8() override {process_class_.i_ = process_class_.i_ - 4; };
+    void on_event_9() override {process_class_.i_ = process_class_.i_ + 5; };
+    void on_event_10() override {process_class_.i_ = process_class_.i_ - 5; };
 
 
    private:
@@ -405,17 +405,6 @@ class SubClassInheritedCallbacks : public CallbackBenchmarkClass{
   };
 
   // Define Event Handling:
-  void OnObject1Event1(){i_ = i_ + 1; }
-  void OnObject1Event2(){i_ = i_ - 1; }
-  void OnObject1Event3(){i_ = i_ + 2; }
-  void OnObject1Event4(){i_ = i_ - 2; }
-  void OnObject1Event5(){i_ = i_ + 3; }
-  void OnObject1Event6(){i_ = i_ - 3; }
-  void OnObject1Event7(){i_ = i_ + 4; }
-  void OnObject1Event8(){i_ = i_ - 4; }
-  void OnObject1Event9(){i_ = i_ + 5; }
-  void OnObject1Event10(){i_ = i_ - 5; }
-
   void CallAll() override {
     object_1_.Trigger();
   }
